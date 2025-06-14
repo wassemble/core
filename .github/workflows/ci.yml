@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      # Setup
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo install --locked cargo-machete
+      - run: cargo install --locked cargo-sort-derives
+      
+      # Checks
+      - run: cargo +nightly fmt --check
+      - run: cargo check
+      - run: cargo clippy
+      - run: cargo machete
+      - run: cargo sort-derives --check
+
+      # Tests
+      - run: cargo test
