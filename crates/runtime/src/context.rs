@@ -1,6 +1,6 @@
 use wasmtime::{
-    component::{Linker, ResourceTable},
-    Config, Engine, Result, Store,
+    Config, Engine, Store,
+    component::{Component, Func, Linker, ResourceTable},
 };
 use wasmtime_wasi::{IoView, WasiCtx, WasiCtxBuilder, WasiView};
 use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
@@ -12,7 +12,7 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn new() -> Result<Self> {
+    pub fn new() -> Result<Self, Error> {
         let mut config = Config::new();
         config.async_support(true);
         let engine = Engine::new(&config)?;
@@ -38,6 +38,16 @@ impl Context {
             store,
         })
     }
+
+    pub async fn get_func(&mut self, component: &Component, name: &str) -> Result<Func, Error> {
+        let instance = self
+            .linker
+            .instantiate_async(&mut self.store, component)
+            .await?;
+        instance
+            .get_func(&mut self.store, name)
+            .ok_or_else(|| Error::FunctionNotFound(name.to_string()))
+    }
 }
 
 pub struct State {
@@ -62,4 +72,12 @@ impl WasiHttpView for State {
     fn ctx(&mut self) -> &mut WasiHttpCtx {
         &mut self.http
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Function not found: {0}")]
+    FunctionNotFound(String),
+    #[error("Wasmtime error: {0}")]
+    Wasmtime(#[from] wasmtime::Error),
 }

@@ -1,0 +1,28 @@
+{
+  "edges": [
+    {
+      "source": "node1",
+      "target": "node2"
+    }
+  ],
+  "nodes": {
+    "node1": {
+      "component": "/target/wasm32-wasip1/debug/component_http.wasm",
+      "function": "handle",
+      "interface": "wasi:http/incoming-handler@0.2.5",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "node2": {
+      "args": [null, "!"],
+      "component": "/target/wasm32-wasip1/debug/demo.wasm",
+      "function": "and-world",
+      "position": {
+        "x": 100,
+        "y": 100
+      }
+    }
+  }
+}
