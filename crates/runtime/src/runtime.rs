@@ -1,13 +1,7 @@
-use wasmtime::{
-    Config, Engine,
-    component::{Linker, ResourceTable},
-};
-use wasmtime_wasi::{IoView, WasiCtx, WasiCtxBuilder, WasiView};
-use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
+pub use wasmtime::Error;
+use wasmtime::{Config, Engine, component::Linker};
 
 use crate::state::State;
-
-pub use wasmtime::Error;
 
 /// The `Runtime` owns the global execution context for workflows.
 ///

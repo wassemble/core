@@ -1,7 +1,6 @@
-use reqwest;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct RemoteFileSource(String);
 
 impl RemoteFileSource {

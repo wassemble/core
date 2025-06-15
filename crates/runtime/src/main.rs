@@ -1,8 +1,7 @@
-use std::{path::PathBuf, pin::pin};
+use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use runtime::{Runtime, prototype::Prototype, task::Task};
-use tokio_stream::StreamExt;
 use workflow::Workflow;
 
 /// A CLI tool for executing workflows
@@ -30,8 +29,8 @@ enum Commands {
 impl Commands {
     fn workflow(&self) -> &PathBuf {
         match self {
-            Commands::Parse { workflow } => &workflow,
-            Commands::Run { workflow } => &workflow,
+            Commands::Parse { workflow } => workflow,
+            Commands::Run { workflow } => workflow,
         }
     }
 }
@@ -52,8 +51,11 @@ async fn main() -> Result<(), Error> {
             task.run().await;
         });
 
-        while let Some(node_id) = subscribe.recv().await.ok() {
-            println!("Node {node_id:?}");
+        while let Ok((node_id, result)) = subscribe.recv().await {
+            match result {
+                Ok(output) => println!("{node_id:#?}: {output:?}"),
+                Err(e) => eprintln!("{node_id:#?}: {e:?}"),
+            }
         }
     }
 

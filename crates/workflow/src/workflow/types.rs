@@ -2,7 +2,7 @@ use std::{fmt, ops::Deref};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct ComponentName(pub String);
 
 impl fmt::Display for ComponentName {

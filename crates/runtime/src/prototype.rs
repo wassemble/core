@@ -1,10 +1,6 @@
 use std::collections::HashMap;
 
-use petgraph::{
-    Directed, Graph,
-    acyclic::Acyclic,
-    graph::{Edges, NodeIndex},
-};
+use petgraph::{Graph, acyclic::Acyclic, graph::NodeIndex};
 use wasmtime::component::{Component, ComponentExportIndex, Val, types::ComponentItem};
 use workflow::{ComponentName, Edge, InputName, Node, NodeId, Workflow};
 
@@ -97,7 +93,7 @@ impl Prototype {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum NodeType {
     Function(Function),
     Value(Val),
@@ -112,7 +108,7 @@ impl NodeType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Function {
     pub(crate) component_name: ComponentName,
     pub(crate) index: ComponentExportIndex,

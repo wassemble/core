@@ -1,7 +1,7 @@
 use oci_client::{Client, Reference, secrets::RegistryAuth};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct OciFileSource(String);
 
 impl OciFileSource {

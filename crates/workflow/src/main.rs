@@ -20,11 +20,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("File must be either JSON or YAML".into());
     };
 
-    // println!(
-    //     "Workflow parsed successfully with {} nodes and {} edges",
-    //     workflow.nodes.len(),
-    //     workflow.edges.len()
-    // );
+    println!(
+        "Workflow parsed successfully with {} nodes and {} edges",
+        workflow.nodes.len(),
+        workflow.edges.len()
+    );
 
     Ok(())
 }

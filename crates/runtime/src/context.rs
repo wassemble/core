@@ -74,7 +74,7 @@ impl WasiHttpView for State {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Function not found: {0}")]
     FunctionNotFound(String),

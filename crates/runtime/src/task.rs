@@ -1,20 +1,12 @@
 use std::collections::HashMap;
 
-use petgraph::{
-    Directed, Graph,
-    acyclic::Acyclic,
-    algo::toposort,
-    graph::{Edges, NodeIndex},
-    visit::EdgeRef,
-};
+use petgraph::{Graph, algo::toposort, graph::NodeIndex, visit::EdgeRef};
 use tokio::sync::broadcast::{Receiver, Sender, channel};
-use tokio_stream::Stream;
 use wasmtime::{
-    Config, Engine, Result, Store,
-    component::{Component, Func, Instance, Linker, ResourceTable, Val},
+    Result, Store,
+    component::{Instance, Val},
 };
-use wasmtime_wasi_http::WasiHttpCtx;
-use workflow::{ComponentName, InputName, NodeId, Workflow};
+use workflow::{ComponentName, InputName, NodeId};
 
 use crate::{
     prototype::{NodeType, Prototype},
@@ -33,7 +25,7 @@ use crate::{
 /// do not share memory or instances directly. Any shared state must be managed
 /// externally via host functions or global services.
 pub struct Task {
-    sender: Sender<NodeId>,
+    sender: Sender<(NodeId, Result<Val, String>)>,
     graph: Graph<NodeType, InputName>,
     instances: HashMap<ComponentName, Instance>,
     store: Store<State>,
@@ -47,7 +39,7 @@ impl Task {
         for (component_name, component) in &prototype.components {
             let instance = runtime
                 .linker
-                .instantiate_async(&mut store, &component)
+                .instantiate_async(&mut store, component)
                 .await?;
             instances.insert(component_name.clone(), instance);
         }
@@ -62,7 +54,7 @@ impl Task {
         })
     }
 
-    pub fn subscribe(&self) -> Receiver<NodeId> {
+    pub fn subscribe(&self) -> Receiver<(NodeId, Result<Val, String>)> {
         self.sender.subscribe()
     }
 
@@ -72,16 +64,13 @@ impl Task {
             let node = self.graph.node_weight(node_index).unwrap();
             let mut val = None;
             if let NodeType::Function(function) = node {
-                if let None = function.val {
+                if function.val.is_none() {
                     let instance = self.instances.get(&function.component_name).unwrap();
                     let func = instance.get_func(&mut self.store, function.index).unwrap();
 
                     let mut params = Vec::new();
                     for (name, _) in func.params(&self.store) {
-                        let input_index = inputs_index
-                            .get(&InputName(name.to_string()))
-                            .unwrap()
-                            .clone();
+                        let input_index = *inputs_index.get(&InputName(name.to_string())).unwrap();
                         match self.graph.node_weight(input_index).unwrap() {
                             NodeType::Value(val) => params.push(val.clone()),
                             NodeType::Function(function) => {
@@ -95,11 +84,15 @@ impl Task {
                         .call_async(&mut self.store, &params, &mut outputs)
                         .await
                     {
-                        self.sender.send(function.node_id.clone()).unwrap();
+                        self.sender
+                            .send((function.node_id.clone(), Err(e.to_string())))
+                            .unwrap();
                     }
                     let output = outputs[0].clone();
                     val = Some(output.clone());
-                    self.sender.send(function.node_id.clone()).unwrap();
+                    self.sender
+                        .send((function.node_id.clone(), Ok(output.clone())))
+                        .unwrap();
                 }
             }
 
