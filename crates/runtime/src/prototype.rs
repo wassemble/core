@@ -1,9 +1,10 @@
+use std::collections::HashMap;
+
 use petgraph::{
     Directed, Graph,
     acyclic::Acyclic,
     graph::{Edges, NodeIndex},
 };
-use std::collections::HashMap;
 use wasmtime::component::{Component, ComponentExportIndex, Val, types::ComponentItem};
 use workflow::{ComponentName, Edge, InputName, Node, NodeId, Workflow};
 
@@ -53,12 +54,12 @@ impl Prototype {
 
             if let ComponentItem::ComponentFunc(func) = item {
                 // We add the node's function to the graph
-                let node_index = graph.add_node(NodeType::Function {
+                let node_index = graph.add_node(NodeType::Function(Function {
                     component_name: node.r#use.clone(),
                     index,
                     node_id: node_id.clone(),
                     val: None,
-                });
+                }));
                 node_indices.insert(node_id, node_index);
 
                 // We add the node's inputs to the graph
@@ -98,13 +99,25 @@ impl Prototype {
 
 #[derive(Debug, Clone)]
 pub enum NodeType {
-    Function {
-        component_name: ComponentName,
-        index: ComponentExportIndex,
-        node_id: NodeId,
-        val: Option<Val>,
-    },
+    Function(Function),
     Value(Val),
+}
+
+impl NodeType {
+    pub fn set_val(&mut self, val: Val) {
+        match self {
+            NodeType::Function(function) => function.val = Some(val),
+            NodeType::Value(val) => *val = val.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Function {
+    pub(crate) component_name: ComponentName,
+    pub(crate) index: ComponentExportIndex,
+    pub(crate) node_id: NodeId,
+    pub(crate) val: Option<Val>,
 }
 
 #[derive(Debug, thiserror::Error)]

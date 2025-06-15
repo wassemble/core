@@ -1,21 +1,26 @@
-use petgraph::Directed;
-use petgraph::graph::Edges;
-use petgraph::{Graph, acyclic::Acyclic, graph::NodeIndex, visit::EdgeRef};
 use std::collections::HashMap;
+
+use petgraph::{
+    Directed, Graph,
+    acyclic::Acyclic,
+    algo::toposort,
+    graph::{Edges, NodeIndex},
+    visit::EdgeRef,
+};
+use tokio::sync::broadcast::{Receiver, Sender, channel};
 use tokio_stream::Stream;
-use wasmtime::component::{Component, Func};
-use wasmtime::component::{Instance, Val};
 use wasmtime::{
     Config, Engine, Result, Store,
-    component::{Linker, ResourceTable},
+    component::{Component, Func, Instance, Linker, ResourceTable, Val},
 };
 use wasmtime_wasi_http::WasiHttpCtx;
-use workflow::NodeId;
-use workflow::{ComponentName, InputName, Workflow};
+use workflow::{ComponentName, InputName, NodeId, Workflow};
 
-use crate::prototype::{NodeType, Prototype};
-use crate::runtime::Runtime;
-use crate::state::State;
+use crate::{
+    prototype::{NodeType, Prototype},
+    runtime::Runtime,
+    state::State,
+};
 
 /// A `Task` represents a single, isolated execution of a workflow prototype.
 ///
@@ -27,8 +32,9 @@ use crate::state::State;
 /// `Prototype`. They may share capabilities via the `Program`'s `Linker`, but
 /// do not share memory or instances directly. Any shared state must be managed
 /// externally via host functions or global services.
-struct Task {
-    graph: Acyclic<Graph<NodeType, InputName>>,
+pub struct Task {
+    sender: Sender<NodeId>,
+    graph: Graph<NodeType, InputName>,
     instances: HashMap<ComponentName, Instance>,
     store: Store<State>,
 }
@@ -46,75 +52,78 @@ impl Task {
             instances.insert(component_name.clone(), instance);
         }
 
+        let (sender, _) = channel(32);
+
         Ok(Self {
-            graph: prototype.graph.clone(),
+            sender,
+            graph: prototype.graph.inner().clone(),
             instances,
             store,
         })
     }
 
-    pub fn run(&mut self) -> impl Stream<Item = (NodeId, Result<Val, Error>)> {
-        async_stream::stream! {
-            for (node, inputs) in self.iter() {
-                if let NodeType::Function {
-                    component_name,
-                    index,
-                    node_id,
-                    val,
-                } = node
-                {
-                    // If the node has no value, it means it's a function that needs to be executed
-                    if let None = val {
-                        // We compute the params from the edges
-                        // We can unwrap here because everything should have been checked at prototype creation
-                        let instance = self.instances.get(component_name).unwrap();
-                        let func = instance.get_func(&mut self.store, *index).unwrap();
-                        let mut params = Vec::new();
-                        for (name, _) in func.params(&self.store) {
-                            match inputs.get(&InputName(name.to_string())).unwrap() {
-                                NodeType::Value(val) => params.push(val.clone()),
-                                NodeType::Function {
-                                    val,
-                                    ..
-                                } => params.push(val.unwrap().clone()),
+    pub fn subscribe(&self) -> Receiver<NodeId> {
+        self.sender.subscribe()
+    }
+
+    pub async fn run(&mut self) {
+        let nodes = self.prepare();
+        for (node_index, inputs_index) in nodes {
+            let node = self.graph.node_weight(node_index).unwrap();
+            let mut val = None;
+            if let NodeType::Function(function) = node {
+                if let None = function.val {
+                    let instance = self.instances.get(&function.component_name).unwrap();
+                    let func = instance.get_func(&mut self.store, function.index).unwrap();
+
+                    let mut params = Vec::new();
+                    for (name, _) in func.params(&self.store) {
+                        let input_index = inputs_index
+                            .get(&InputName(name.to_string()))
+                            .unwrap()
+                            .clone();
+                        match self.graph.node_weight(input_index).unwrap() {
+                            NodeType::Value(val) => params.push(val.clone()),
+                            NodeType::Function(function) => {
+                                params.push(function.val.clone().unwrap())
                             }
                         }
-
-                        // We execute the function and yield the result
-                        let mut outputs = Vec::new();
-                        if let Err(e) = func.call_async(&mut self.store, &params, &mut outputs).await {
-                            yield (node_id.clone(), Err(Error::Wasmtime(e)));
-                        }
-                        let output = outputs[0].clone();
-                        *val = Some(output.clone());
-                        yield (node_id.clone(), Ok(output));
                     }
+
+                    let mut outputs = Vec::new();
+                    if let Err(e) = func
+                        .call_async(&mut self.store, &params, &mut outputs)
+                        .await
+                    {
+                        self.sender.send(function.node_id.clone()).unwrap();
+                    }
+                    let output = outputs[0].clone();
+                    val = Some(output.clone());
+                    self.sender.send(function.node_id.clone()).unwrap();
                 }
+            }
+
+            if let Some(val) = val {
+                self.graph.node_weight_mut(node_index).unwrap().set_val(val);
             }
         }
     }
 
-    fn iter(
-        &mut self,
-    ) -> impl Iterator<Item = (&mut NodeType, HashMap<InputName, &NodeType>)> + '_ {
-        self.graph.nodes_iter().map(|index| {
-            let leaf = self.graph.node_weight_mut(index).unwrap();
-            let edges = self.graph.edges_directed(index, petgraph::Incoming);
+    fn prepare(&self) -> Vec<(NodeIndex, HashMap<InputName, NodeIndex>)> {
+        let mut nodes = Vec::new();
+        for node_index in toposort(&self.graph, None).unwrap() {
+            let edges = self.graph.edges_directed(node_index, petgraph::Incoming);
             let inputs = edges
-                .map(|edge| {
-                    let input_name = edge.weight().clone();
-                    let source = edge.source();
-                    let input_val = self.graph.node_weight(source).unwrap();
-                    (input_name, input_val)
-                })
+                .map(|edge| (edge.weight().clone(), edge.source()))
                 .collect();
-            (leaf, inputs)
-        })
+            nodes.push((node_index, inputs));
+        }
+        nodes
     }
 }
 
 #[derive(Debug, thiserror::Error)]
-enum Error {
+pub enum Error {
     #[error("Wasmtime error: {0}")]
     Wasmtime(#[from] wasmtime::Error),
 }

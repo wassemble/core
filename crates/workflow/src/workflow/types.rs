@@ -1,5 +1,6 @@
-use serde::{Deserialize, Serialize};
 use std::{fmt, ops::Deref};
+
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Serialize)]
 pub struct ComponentName(pub String);

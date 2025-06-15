@@ -1,8 +1,9 @@
 use std::{path::PathBuf, pin::pin};
 
 use clap::{Parser, Subcommand};
-use engine::{executor::Executor, metadata::Metadata, workflow::Workflow, Engine};
+use runtime::{Runtime, prototype::Prototype, task::Task};
 use tokio_stream::StreamExt;
+use workflow::Workflow;
 
 /// A CLI tool for executing workflows
 #[derive(Debug, Parser)]
@@ -26,61 +27,47 @@ enum Commands {
     },
 }
 
+impl Commands {
+    fn workflow(&self) -> &PathBuf {
+        match self {
+            Commands::Parse { workflow } => &workflow,
+            Commands::Run { workflow } => &workflow,
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     tracing_subscriber::fmt::init();
     let args = Args::parse();
+    let mut runtime = Runtime::new()?;
+    let workflow = Workflow::load(args.command.workflow())?;
+    let prototype = Prototype::new(&mut runtime, &workflow).await?;
 
-    match args.command {
-        Commands::Parse { workflow } => {
-            let workflow = load_workflow(&workflow)?;
-            let mut engine = Engine::new()?;
-            let metadata = Metadata::new(&mut engine, workflow.sources()).await;
-            println!("{}", serde_json::to_string_pretty(&metadata)?);
-        }
-        Commands::Run { workflow } => {
-            let workflow = load_workflow(&workflow)?;
-            let mut engine = Engine::new()?;
-            engine.load_components(&workflow.sources()).await?;
-            let executor = Executor::new(&workflow)?;
-            let stream = executor.run(&mut engine);
-            let mut stream = pin!(stream);
-            while let Some((node_id, result)) = stream.next().await {
-                match result {
-                    Ok(outputs) => {
-                        println!("Node {node_id:?} output: {outputs:?}");
-                    }
-                    Err(e) => {
-                        println!("Node {node_id:?} error: {e:?}");
-                    }
-                }
-            }
+    if let Commands::Run { .. } = args.command {
+        let mut task = Task::new(&mut runtime, &prototype).await?;
+        let mut subscribe = task.subscribe();
+
+        tokio::spawn(async move {
+            task.run().await;
+        });
+
+        while let Some(node_id) = subscribe.recv().await.ok() {
+            println!("Node {node_id:?}");
         }
     }
 
     Ok(())
 }
 
-fn load_workflow(path: &PathBuf) -> Result<Workflow, Error> {
-    let source = std::fs::read_to_string(path)?;
-    let is_json = path.extension().is_some_and(|ext| ext == "json");
-    let workflow: Workflow = match is_json {
-        true => serde_json::from_str(&source)?,
-        false => serde_yaml::from_str(&source)?,
-    };
-    Ok(workflow)
-}
-
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
-    Engine(#[from] engine::Error),
+    Prototype(#[from] runtime::prototype::Error),
     #[error(transparent)]
-    Executor(#[from] engine::executor::Error),
+    Runtime(#[from] runtime::Error),
     #[error(transparent)]
-    File(#[from] std::io::Error),
+    Task(#[from] runtime::task::Error),
     #[error(transparent)]
-    Json(#[from] serde_json::Error),
-    #[error(transparent)]
-    Yaml(#[from] serde_yaml::Error),
+    Workflow(#[from] workflow::Error),
 }

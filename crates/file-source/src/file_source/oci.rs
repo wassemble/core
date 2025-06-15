@@ -1,4 +1,4 @@
-use oci_client::{secrets::RegistryAuth, Client, Reference};
+use oci_client::{Client, Reference, secrets::RegistryAuth};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

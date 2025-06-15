@@ -2,14 +2,14 @@ mod local;
 mod oci;
 mod remote;
 
-use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use thiserror::Error;
-use url::Url;
 
 pub use local::LocalFileSource;
 pub use oci::OciFileSource;
 pub use remote::RemoteFileSource;
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+use url::Url;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FileSource {
