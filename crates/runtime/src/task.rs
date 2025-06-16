@@ -100,7 +100,7 @@ impl Task {
                                 e.to_string(),
                             ))
                             .unwrap();
-                    } else if let Some(output) = outputs.get(0) {
+                    } else if let Some(output) = outputs.first() {
                         val = Some(output.clone());
                         self.sender
                             .send(Event::ExecutionSucceeded(
