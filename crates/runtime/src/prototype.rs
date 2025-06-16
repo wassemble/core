@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use petgraph::{Graph, acyclic::Acyclic, graph::NodeIndex};
 use wasmtime::component::{Component, ComponentExportIndex, Val, types::ComponentItem};
-use workflow::{ComponentName, Edge, InputName, Node, NodeId, Workflow};
+use workflow::{ComponentName, Edge, FunctionName, InputName, Node, NodeId, Workflow};
 
 use crate::runtime::Runtime;
 
@@ -46,7 +46,16 @@ impl Prototype {
             };
 
             // Then, we lookup the corresponding function
-            let (item, index) = component.export_index(None, &node.run).unwrap();
+            let (item, index) = component.export_index(None, &node.run).ok_or({
+                Error::MissingFunction(
+                    node.run.clone(),
+                    component
+                        .component_type()
+                        .exports(&runtime.engine)
+                        .map(|(name, _)| name.to_string())
+                        .collect(),
+                )
+            })?;
 
             if let ComponentItem::ComponentFunc(func) = item {
                 // We add the node's function to the graph
@@ -128,6 +137,8 @@ pub enum Error {
     InvalidEdge(Edge),
     #[error("Invalid node: {0:?}")]
     InvalidNode(Node),
+    #[error("Missing function: {0:?}, available: {1:?}")]
+    MissingFunction(FunctionName, Vec<String>),
     #[error("Missing input: {0:?}")]
     MissingInput(InputName),
     #[error("Wasmtime error: {0}")]

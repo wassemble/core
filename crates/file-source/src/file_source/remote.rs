@@ -8,6 +8,10 @@ impl RemoteFileSource {
         Self(url)
     }
 
+    pub fn url(&self) -> &str {
+        &self.0
+    }
+
     pub async fn load(&self) -> Result<Vec<u8>, Error> {
         Ok(reqwest::get(&self.0)
             .await?

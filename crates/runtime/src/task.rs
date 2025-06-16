@@ -25,7 +25,7 @@ use crate::{
 /// do not share memory or instances directly. Any shared state must be managed
 /// externally via host functions or global services.
 pub struct Task {
-    sender: Sender<(NodeId, Result<Val, String>)>,
+    sender: Sender<Event>,
     graph: Graph<NodeType, InputName>,
     instances: HashMap<ComponentName, Instance>,
     store: Store<State>,
@@ -54,7 +54,7 @@ impl Task {
         })
     }
 
-    pub fn subscribe(&self) -> Receiver<(NodeId, Result<Val, String>)> {
+    pub fn subscribe(&self) -> Receiver<Event> {
         self.sender.subscribe()
     }
 
@@ -79,20 +79,37 @@ impl Task {
                         }
                     }
 
-                    let mut outputs = Vec::new();
+                    self.sender
+                        .send(Event::ExecutionStarted(
+                            function.node_id.clone(),
+                            params.clone(),
+                        ))
+                        .unwrap();
+
+                    let results = func.results(&self.store).len();
+
+                    // We need to set a default value for the output or we get "expected 1 results(s), got 0" error
+                    let mut outputs = vec![Val::S32(0); results];
                     if let Err(e) = func
                         .call_async(&mut self.store, &params, &mut outputs)
                         .await
                     {
                         self.sender
-                            .send((function.node_id.clone(), Err(e.to_string())))
+                            .send(Event::ExecutionFailed(
+                                function.node_id.clone(),
+                                e.to_string(),
+                            ))
+                            .unwrap();
+                    } else if let Some(output) = outputs.get(0) {
+                        val = Some(output.clone());
+                        self.sender
+                            .send(Event::ExecutionSucceeded(
+                                function.node_id.clone(),
+                                output.clone(),
+                            ))
                             .unwrap();
                     }
-                    let output = outputs[0].clone();
-                    val = Some(output.clone());
-                    self.sender
-                        .send((function.node_id.clone(), Ok(output.clone())))
-                        .unwrap();
+                    func.post_return_async(&mut self.store).await.unwrap();
                 }
             }
 
@@ -119,4 +136,11 @@ impl Task {
 pub enum Error {
     #[error("Wasmtime error: {0}")]
     Wasmtime(#[from] wasmtime::Error),
+}
+
+#[derive(Clone, Debug)]
+pub enum Event {
+    ExecutionFailed(NodeId, String),
+    ExecutionStarted(NodeId, Vec<Val>),
+    ExecutionSucceeded(NodeId, Val),
 }

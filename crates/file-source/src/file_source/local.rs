@@ -11,6 +11,10 @@ impl LocalFileSource {
         Self(path)
     }
 
+    pub fn path(&self) -> &PathBuf {
+        &self.0
+    }
+
     pub async fn load(&self) -> Result<Vec<u8>, Error> {
         Ok(fs::read(&self.0).await?)
     }

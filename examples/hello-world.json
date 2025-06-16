@@ -1,40 +1,22 @@
 {
+  "dependencies": {
+    "hello-world": "ghcr.io/wassemble/hello-world:0.1.0"
+  },
   "edges": [
     {
-      "id": "hello->and-world",
       "input": "a",
-      "source": "hello",
-      "target": "and-world"
+      "source": "hello-world1",
+      "target": "hello-world2"
     }
   ],
   "nodes": {
-    "hello": {
-      "data": {
-        "function": "hello",
-        "interface": null,
-        "library": "demo",
-        "source": "./wasm/demo.wasm"
-      },
-      "id": "hello",
-      "position": {
-        "x": 0,
-        "y": 0
-      },
-      "type": "func"
+    "hello-world1": {
+        "run": "hello-world",
+        "use": "hello-world"
     },
-    "and-world": {
-      "data": {
-        "function": "and-world",
-        "interface": null,
-        "library": "demo",
-        "source": "./wasm/demo.wasm"
-      },
-      "id": "and-world",
-      "position": {
-        "x": 100,
-        "y": 100
-      },
-      "type": "func"
+    "hello-world2": {
+      "run": "hello-world",
+      "use": "hello-world"
     }
   }
 }

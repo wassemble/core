@@ -5,9 +5,6 @@ check:
     cargo machete
     cargo sort-derives
 
-engine workflow:
-    WASMTIME_BACKTRACE_DETAILS=1 cargo run -p engine -- run -w ./engine/examples/{{workflow}}.json
-
 install: 
     cargo install --locked cargo-component
     cargo install --locked cargo-machete
@@ -18,4 +15,7 @@ install:
     pnpm install
 
 parse workflow:
-    WASMTIME_BACKTRACE_DETAILS=1 cargo run -p engine -- parse -w ./engine/examples/{{workflow}}.json
+    WASMTIME_BACKTRACE_DETAILS=1 cargo run -p runtime -- parse -w ./examples/{{workflow}}.json
+
+run workflow:
+    WASMTIME_BACKTRACE_DETAILS=1 cargo run -p runtime -- run -w ./examples/{{workflow}}.json

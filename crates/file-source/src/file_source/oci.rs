@@ -9,6 +9,10 @@ impl OciFileSource {
         Self(url)
     }
 
+    pub fn url(&self) -> &str {
+        &self.0
+    }
+
     pub async fn load(&self) -> Result<Vec<u8>, Error> {
         let client = Client::default();
         let reference: Reference = self.0.parse()?;

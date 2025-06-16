@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use url::Url;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug)]
 pub enum FileSource {
     Local(LocalFileSource),
     Remote(RemoteFileSource),
@@ -68,6 +68,33 @@ impl FileSource {
             FileSource::Remote(source) => source.load().await?,
             FileSource::Oci(source) => source.load().await?,
         })
+    }
+
+    fn as_str(&self) -> String {
+        match self {
+            FileSource::Local(source) => source.path().to_string_lossy().into_owned(),
+            FileSource::Remote(source) => source.url().to_string(),
+            FileSource::Oci(source) => source.url().to_string(),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for FileSource {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Self::parse(&s).map_err(serde::de::Error::custom)
+    }
+}
+
+impl Serialize for FileSource {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.as_str())
     }
 }
 

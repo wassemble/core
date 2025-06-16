@@ -1,7 +1,11 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use runtime::{Runtime, prototype::Prototype, task::Task};
+use runtime::{
+    Runtime,
+    prototype::Prototype,
+    task::{Event, Task},
+};
 use workflow::Workflow;
 
 /// A CLI tool for executing workflows
@@ -51,10 +55,17 @@ async fn main() -> Result<(), Error> {
             task.run().await;
         });
 
-        while let Ok((node_id, result)) = subscribe.recv().await {
-            match result {
-                Ok(output) => println!("{node_id:#?}: {output:?}"),
-                Err(e) => eprintln!("{node_id:#?}: {e:?}"),
+        while let Ok(event) = subscribe.recv().await {
+            match event {
+                Event::ExecutionStarted(node_id, params) => {
+                    println!("{node_id} started with params: {params:?}")
+                }
+                Event::ExecutionSucceeded(node_id, output) => {
+                    println!("{node_id} succeeded with output: {output:?}")
+                }
+                Event::ExecutionFailed(node_id, error) => {
+                    eprintln!("{node_id} failed with error: {error:?}")
+                }
             }
         }
     }
