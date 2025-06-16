@@ -1,0 +1,16 @@
+[package]
+name = "file-source"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+regex.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+oci-client.workspace = true
+url.workspace = true
+
+[target.'cfg(all())'.dependencies]
+clap.workspace = true
+tokio.workspace = true

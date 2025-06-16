@@ -1,0 +1,15 @@
+[package]
+name = "workflow"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+file-source = { path = "../file-source" }
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+thiserror.workspace = true
+
+[target.'cfg(all())'.dependencies]
+clap.workspace = true
+tokio.workspace = true

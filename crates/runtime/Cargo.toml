@@ -1,0 +1,22 @@
+[package]
+name = "runtime"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+file-source = { path = "../file-source" }
+petgraph.workspace = true
+thiserror.workspace = true
+tracing-subscriber.workspace = true
+# tracing.workspace = true
+wasmtime-wasi-http.workspace = true
+wasmtime-wasi.workspace = true
+wasmtime.workspace = true
+workflow = { path = "../workflow" }
+
+[target.'cfg(all())'.dependencies]
+clap.workspace = true
+tokio.workspace = true

@@ -1,0 +1,98 @@
+---
+description: 
+globs: *.rs
+alwaysApply: false
+---
+# Documentation Rules
+
+## Code Documentation
+
+1. Function documentation:
+   - Purpose and intent
+   - Parameters and return values
+   - Usage examples
+   - No implementation details
+   - Use `///` for doc comments
+
+2. Type documentation:
+   - Domain meaning
+   - Usage context
+   - Constraints
+   - Examples
+   - Use `///` for doc comments
+
+3. Module documentation:
+   - Purpose and scope
+   - Dependencies
+   - Usage guidelines
+   - Examples
+   - Use `//!` for module-level docs
+
+## Molecule Documentation
+
+1. Core documentation:
+   - Domain concept
+   - Standalone capabilities
+   - Integration points
+   - Dependencies
+   - Cargo.toml metadata
+
+2. Molecule structure:
+   - File organization
+   - Key components
+   - Data flow
+   - External interfaces
+   - Module hierarchy
+
+3. Molecule usage:
+   - How to run standalone
+   - How to integrate
+   - Configuration options
+   - Examples
+   - Feature flags
+
+## System Documentation
+
+1. Architecture overview:
+   - Molecule relationships
+   - Dependency graph
+   - Integration patterns
+   - Deployment options
+   - Workspace structure
+
+2. Shared resources:
+   - Library usage
+   - Common utilities
+   - Cross-cutting concerns
+   - Best practices
+   - Cargo workspace
+
+3. Development workflow:
+   - Adding new molecules
+   - Removing molecules
+   - Testing strategy
+   - Deployment process
+   - Cargo commands
+
+## Documentation Standards
+
+1. Documentation location:
+   - Code comments for implementation
+   - README.md for modules
+   - Architecture docs for system
+   - API docs for interfaces
+   - Cargo doc for API docs
+
+2. Documentation format:
+   - Clear and concise
+   - Use markdown
+   - Include examples
+   - Keep up to date
+   - Follow rustdoc conventions
+
+3. Documentation maintenance:
+   - Update with code changes
+   - Review regularly
+   - Remove obsolete docs
+   - Version control docs
+   - Run `cargo doc` regularly

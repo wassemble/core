@@ -1,0 +1,106 @@
+---
+description: 
+globs: *.rs
+alwaysApply: false
+---
+# Testing Rules
+
+## Core Principles
+
+1. Each molecule must be independently testable:
+   - No dependencies on other molecules
+   - Use in-memory databases for testing
+   - Mock external services
+   - Use feature flags for test dependencies
+
+2. Test organization:
+   - Unit tests in `#[cfg(test)]` modules
+   - Integration tests in `tests/` directory
+   - End-to-end tests for aggregators
+   - Use test attributes appropriately
+
+3. Test naming:
+   - Describe the scenario
+   - Include expected outcome
+   - Use domain terminology
+   - Follow Rust test naming conventions
+
+## Test Structure
+
+1. Test file organization:
+   - Group related tests
+   - Alphabetical ordering within groups
+   - Clear test descriptions
+   - Use test modules for organization
+
+2. Test setup:
+   - Minimal setup required
+   - Clear test data
+   - Isolated test environment
+   - Use test fixtures when needed
+
+3. Test assertions:
+   - One concept per test
+   - Clear failure messages
+   - Domain-specific assertions
+   - Use appropriate assertion macros
+
+## Testing Practices
+
+1. Test coverage:
+   - Core business logic
+   - Edge cases
+   - Error conditions
+   - Use `cargo tarpaulin` for coverage
+
+2. Test data:
+   - Use realistic data
+   - Include edge cases
+   - Document test data purpose
+   - Use const for test data
+
+3. Test maintenance:
+   - Keep tests simple
+   - Update tests with code changes
+   - Remove obsolete tests
+   - Run tests in CI
+
+## Molecule Testing
+
+1. Standalone testing:
+   - Test molecule in isolation
+   - Use in-memory services
+   - No external dependencies
+   - Use test features in Cargo.toml
+
+2. Integration testing:
+   - Test molecule boundaries
+   - Verify integration points
+   - Check dependency handling
+   - Use test helpers
+
+3. Aggregator testing:
+   - Test molecule combinations
+   - Verify system behavior
+   - Check communication flow
+   - Use workspace tests
+
+## Rust-Specific Testing
+
+1. Test attributes:
+   - Use `#[test]` for test functions
+   - Use `#[cfg(test)]` for test modules
+   - Use `#[ignore]` for slow tests
+   - Use `#[should_panic]` for panic tests
+
+2. Test utilities:
+   - Use `assert!` for boolean checks
+   - Use `assert_eq!` for equality
+   - Use `assert_ne!` for inequality
+   - Use `assert_matches!` for pattern matching
+
+3. Test organization:
+   - Use `mod tests` for unit tests
+   - Use `tests/` directory for integration
+   - Use `benches/` for benchmarks
+   - Use `examples/` for examples

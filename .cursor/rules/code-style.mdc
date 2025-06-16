@@ -1,0 +1,104 @@
+---
+description: 
+globs: *.rs
+alwaysApply: false
+---
+# Code Style Rules
+
+## Organization
+
+1. Alphabetical ordering:
+   - Sort imports alphabetically
+   - Sort exports alphabetically
+   - Sort struct fields alphabetically
+   - Sort enum variants alphabetically
+   - Sort function parameters alphabetically
+
+2. File structure:
+   - Module declarations at the top
+   - Imports after module declarations
+   - Types and traits next
+   - Constants after types
+   - Functions after constants
+   - Tests at the bottom
+
+3. Function organization:
+   - Public functions first
+   - Private functions after
+   - Helper functions last
+
+## Naming
+
+1. Use domain-specific names:
+   - Avoid generic terms
+   - Names should reflect business concepts
+   - No technical implementation names
+
+2. Function names:
+   - Start with verbs
+   - Be specific about action
+   - Include domain context
+   - Use `snake_case`
+
+3. Variable names:
+   - Be descriptive
+   - Include type information
+   - Use domain terminology
+   - Use `snake_case`
+
+## Abstractions
+
+1. Only create abstractions for:
+   - Domain concepts
+   - DRY violations
+   - No other reasons
+
+2. Keep abstractions:
+   - Close to their usage
+   - Simple and focused
+   - Well-documented
+
+3. Avoid:
+   - Premature abstraction
+   - Over-engineering
+   - Unnecessary traits
+
+## Molecule Structure
+
+1. Keep related code together:
+   - Domain logic in one place
+   - No artificial layering
+   - Clear boundaries
+   - Use Rust modules for organization
+
+2. Minimize dependencies:
+   - Only import what's needed
+   - No circular dependencies
+   - Clear dependency direction
+   - Use feature flags in Cargo.toml
+
+3. Export only what's needed:
+   - Hide implementation details
+   - Clear public interface
+   - Domain-focused exports
+   - Use `pub(crate)` for internal visibility
+
+## Rust-Specific Guidelines
+
+1. Error handling:
+   - Use custom error types
+   - Implement `std::error::Error`
+   - Use `?` operator appropriately
+   - Provide context in error messages
+
+2. Type safety:
+   - Use strong types
+   - Avoid `String` when possible
+   - Use newtypes for domain concepts
+   - Leverage the type system
+
+3. Performance:
+   - Use references appropriately
+   - Avoid unnecessary cloning
+   - Use appropriate data structures
+   - Profile when needed

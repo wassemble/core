@@ -1,0 +1,22 @@
+{
+  "dependencies": {
+    "hello-world": "ghcr.io/wassemble/hello-world:0.1.0"
+  },
+  "edges": [
+    {
+      "input": "a",
+      "source": "hello-world1",
+      "target": "hello-world2"
+    }
+  ],
+  "nodes": {
+    "hello-world1": {
+        "run": "hello-world",
+        "use": "hello-world"
+    },
+    "hello-world2": {
+      "run": "hello-world",
+      "use": "hello-world"
+    }
+  }
+}

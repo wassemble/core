@@ -1,0 +1,73 @@
+---
+description: 
+globs: *.rs
+alwaysApply: false
+---
+# Architecture Rules
+
+## Core Principles
+
+1. Each molecule must be a Working Piece of Software:
+   - Contains everything needed to run independently
+   - Represents a single domain concept
+   - Can be executed standalone or as part of a larger system
+   - Hides internal implementation details
+
+2. Molecule Structure:
+   - Must have a `main.rs` for standalone execution
+   - Contains all related domain logic in one place
+   - Uses Rust modules for internal organization
+   - No artificial layering within molecules
+
+3. Shared Code:
+   - Domain-agnostic utilities in `lib/`
+   - No domain logic in shared code
+   - Clear ownership of domain-specific code
+   - Unidirectional dependencies only
+
+4. Module Integration:
+   - Molecules can be combined into larger features
+   - No circular dependencies allowed
+   - Clear dependency graph
+   - Explicit integration points
+
+5. Feature Removal:
+   - Molecules can be removed without side effects
+   - No scattered references across codebase
+   - Clean removal process
+   - No feature flags needed
+
+## Directory Structure
+
+```
+modules/
+├── molecule/
+│   ├── src/
+│   │   ├── lib.rs      // Public interface
+│   │   ├── molecule.rs // Core domain logic
+│   │   └── schema.rs   // Data definitions
+│   ├── Cargo.toml      // Dependencies
+│   └── main.rs         // Standalone runner
+│
+├── aggregator/
+│   ├── src/
+│   │   └── main.rs     // Combines molecules
+│   └── Cargo.toml
+│
+└── lib/
+    ├── src/
+    │   ├── lib.rs
+    │   └── utils.rs
+    └── Cargo.toml
+```
+
+## Naming Conventions
+
+1. Molecules must be named after their domain concept
+2. Files must reflect their primary responsibility
+3. No generic names like "controller", "model", "view"
+4. Use clear, domain-specific terminology
+5. Follow Rust naming conventions:
+   - `snake_case` for modules and functions
+   - `CamelCase` for types and traits
+   - `SCREAMING_SNAKE_CASE` for constants
